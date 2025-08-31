@@ -1,29 +1,25 @@
-name: Node.js CI
+name: CI/CD on Localhost
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: self-hosted  # THIS is key – runs on your local runner
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: "18"
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run the app (test start)
+    - name: Stop and remove old container (if running)
       run: |
-        npm start &
-        sleep 5
-        curl http://localhost:3000
+        docker stop my-node-app || true
+        docker rm my-node-app || true
+
+    - name: Build Docker image
+      run: docker build -t my-node-app .
+
+    - name: Run Docker container
+      run: docker run -d -p 3000:3000 --name my-node-app my-node-app
